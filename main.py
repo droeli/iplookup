@@ -10,7 +10,7 @@ parser.add_argument("--ip", help="IP Address to check for")
 args = parser.parse_args()
 
 # Define CSV file location
-csvpath = Path(r"C:\Users\taamumas\Downloads\FUSION_BGP_TABLE_20210212.CSV")
+csvpath = Path(r"C:\Users\BGP_TABLE_20210212.CSV")
 
 # Define global variables
 csvreader = ""
@@ -60,6 +60,6 @@ def networklookup():
             print("======================")
     else:
         for ip in lookupip:
-            print("{ip} is not in the LEUnet BGP table".format(ip=ip))
+            print("{ip} is not in the BGP table".format(ip=ip))
 
 networklookup()
