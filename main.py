@@ -10,56 +10,43 @@ parser.add_argument("--ip", help="IP Address to check for")
 args = parser.parse_args()
 
 # Define CSV file location
-csvpath = Path(r"C:\Users\BGP_TABLE_20210212.CSV")
+csvpath = "BGP_TABLE_20210212.CSV"
 
-# Define global variables
-csvreader = ""
-nwlist = []
-lookupip = args.ip.split(",")
-resultsdict = {}
-
-def readcsv():
-    # Read CSV and add content to a variable
+def readcsv(csvpath):
+    # Read CSV and convert list of lists to dictionary
     with open(csvpath, "r") as csvfile:
         csvreader = csv.reader(csvfile, delimiter=';')
-        for line in csvreader:
-            nwlist.append(line)
-    for index, line in enumerate(nwlist):
-        nwlist[index][1] = re.sub("[\[\]]","", re.sub("\:", " ", line[1])).lstrip().rstrip()
+        bgpdict = { re.sub("[\[\]]","", re.sub("\:", " ", x[1])).lstrip().rstrip(): ip_network(x[0]) for x in csvreader }
+    return bgpdict
 
-
-def inputvalidation():
+def inputvalidation(argumentstring):
     # Validate entered IP address
-    for ip in lookupip:
+    ip_list = []
+    for ip in argumentstring.split(','):
         try:
-            ip_address(ip)
-            lookupip[lookupip.index(ip)] = ip_address(ip)
-            # legal
+            ip_list.append(ip_address(ip))
         except:
-            print("{ip} Not a valid IP address, try again".format(ip=ip))
+            print("{ip} Not a valid IP address, ignoring...\n======================".format(ip=ip))
+    return ip_list
 
-
-def networklookup():
-    readcsv()
-    inputvalidation()
-    # Convert Strings in nwlist to network objects
-    for row in nwlist: row[0] = ip_network(row[0])
+def networklookup(bgpdict, lookupip):
+    output = []
+    resultsdict = {}
     # Do the actual crosscheck
-    for address in lookupip:
-        resultsdict[address] = []
-        for nw in nwlist:
-            if address in nw[0]:
-                resultsdict[address].append(nw)
+    for ip in lookupip:
+        resultsdict[ip] = []
+        for name, network in bgpdict.items():
+            if ip in network:
+                resultsdict[ip].append(name)
     
-    if resultsdict != {}:
-        for key, value in resultsdict.items():
-            print("{ip} is in this VRF:".format(ip=key))
-            print(" ")
+    for key, value in resultsdict.items():
+        if len(value) > 0:
+            output.append("{ip} is in this VRF:".format(ip=key))
             for entry in value:
-                print("VRF {vrf}, subnet {nw}".format(vrf=entry[1], nw=entry[0]))
-            print("======================")
-    else:
-        for ip in lookupip:
-            print("{ip} is not in the BGP table".format(ip=ip))
+                output.append("VRF {vrf}, subnet {nw}".format(vrf=entry, nw=bgpdict[entry]))
+            output.append("======================")
+        else:
+            output.append("{ip} is not in the BGP table".format(ip=ip))
+    return output
 
-networklookup()
+print('\n'.join(networklookup(readcsv(csvpath),inputvalidation(args.ip))))
