@@ -16,7 +16,8 @@ def readcsv(csvpath):
     # Read CSV and convert list of lists to dictionary
     with open(csvpath, "r") as csvfile:
         csvreader = csv.reader(csvfile, delimiter=';')
-        bgpdict = { re.sub("[\[\]]","", re.sub("\:", " ", x[1])).lstrip().rstrip(): ip_network(x[0]) for x in csvreader }
+        bgpdict = { ip_network(x[0]): re.sub("[\[\]]","", re.sub("\:", " ", x[1])).lstrip().rstrip() for x in csvreader }
+        print(bgpdict)
     return bgpdict
 
 def inputvalidation(argumentstring):
@@ -35,15 +36,15 @@ def networklookup(bgpdict, lookupip):
     # Do the actual crosscheck
     for ip in lookupip:
         resultsdict[ip] = []
-        for name, network in bgpdict.items():
+        for network, name in bgpdict.items():
             if ip in network:
-                resultsdict[ip].append(name)
+                resultsdict[ip].append((name, network))
     
     for key, value in resultsdict.items():
         if len(value) > 0:
             output.append("{ip} is in this VRF:".format(ip=key))
-            for entry in value:
-                output.append("VRF {vrf}, subnet {nw}".format(vrf=entry, nw=bgpdict[entry]))
+            for name, network in value:
+                output.append("VRF {vrf}, subnet {nw}".format(vrf=name, nw=network))
             output.append("======================")
         else:
             output.append("{ip} is not in the BGP table".format(ip=ip))
