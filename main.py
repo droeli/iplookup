@@ -17,7 +17,6 @@ def readcsv(csvpath):
     with open(csvpath, "r") as csvfile:
         csvreader = csv.reader(csvfile, delimiter=';')
         bgpdict = { ip_network(x[0]): re.sub("[\[\]]","", re.sub("\:", " ", x[1])).lstrip().rstrip() for x in csvreader }
-        print(bgpdict)
     return bgpdict
 
 def inputvalidation(argumentstring):
